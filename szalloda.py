@@ -60,6 +60,9 @@ class SzallodaGUI:
         window_height = 250
         self.master.geometry(f'{window_width}x{window_height}')
 
+        # Ablak méretének fixálása, hogy ne lehessen átméretezni
+        self.master.resizable(False, False)
+
         # Ablak középre helyezése
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
@@ -117,12 +120,15 @@ class SzallodaGUI:
 
     def uj_foglalas(self):
         szobaszam = simpledialog.askinteger("Foglalás", "Szoba száma:")
+        
         if szobaszam is None: return
+
         if szobaszam in self.szalloda.szobak:
             datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
+            
             if datum is None: return
             try:
-                date_obj = datetime.strptime(datum, '%Y. %m. %d').date()
+                date_obj = datetime.strptime(datum, '%Y.%m.%d').date()
                 if date_obj < date.today():
                     raise ValueError("A dátum nem lehet a mai napnál korábbi.")
                 ar = self.szalloda.foglalas(szobaszam, date_obj)
