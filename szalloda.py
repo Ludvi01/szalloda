@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, font as tkFont
+from tkinter import font as tkFont, messagebox, simpledialog, Listbox, Scrollbar
 from datetime import date, datetime, timedelta
 
 class Szoba:
@@ -73,14 +73,27 @@ class SzallodaGUI:
 
         # szálloda neve címkéje
         header_label = tk.Label(master, text=self.szalloda.nev, font=self.header_font)
-        header_label.grid(row=0, column=0, columnspan=2, sticky="nsew")
+        header_label.grid(row=0, column=0, columnspan=2, sticky="nsew", pady=10)
 
         # Foglalások címkéje
         tk.Label(master, text="Foglalások:", font=self.header_font).grid(row=1, column=0, sticky="w", padx=15)
+        
+        # Foglalások listájának kerete, paddinggel
+        list_frame = tk.Frame(master, padx=15, pady=5)
+        list_frame.grid(row=2, column=0, columnspan=2, sticky="nsew")
 
-        # Foglalások listájának megjelenítése
-        self.foglalasok_listbox = tk.Listbox(master, width=35, height=2, font=self.normal_font)
-        self.foglalasok_listbox.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=15)
+        # Foglalások listájának megjelenítése, görgetősávval
+        self.foglalasok_listbox = Listbox(list_frame, height=6, font=self.normal_font, 
+                selectbackground='green', selectforeground='white', activestyle='none')
+        self.foglalasok_listbox.pack(side="left", fill="both", expand=True)
+
+        scrollbar = Scrollbar(list_frame, orient="vertical", command=self.foglalasok_listbox.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.foglalasok_listbox.config(yscrollcommand=scrollbar.set)
+
+        # Ablak oszlopainak konfigurálása, hogy helyet biztosítsanak a Scrollbar számára
+        master.grid_columnconfigure(0, weight=1)
+        master.grid_columnconfigure(1, weight=0)
 
         # Új foglalás gomb
         tk.Button(master, text='Új Foglalás', command=self.uj_foglalas, font=self.normal_font).grid(row=3, column=0, sticky="nsew", padx=15, pady=10)
@@ -88,24 +101,33 @@ class SzallodaGUI:
         # Lemondás gomb
         tk.Button(master, text='Lemondás', command=self.lemondas, font=self.normal_font).grid(row=3, column=1, sticky="nsew", padx=15, pady=10)
 
+        # A két oszlopot, ahol a gombok vannak, nyújthatónak állítjuk be
+        master.grid_columnconfigure(0, weight=1)
+        master.grid_columnconfigure(1, weight=1)
+        
         # A foglalások listájának frissítése
         self.frissit_foglalasok_listajat()
 
     def frissit_foglalasok_listajat(self):
         self.foglalasok_listbox.delete(0, tk.END)
-        for foglalas in self.szalloda.foglalasok_listazasa():
-            self.foglalasok_listbox.insert(tk.END, f"Szoba: {foglalas[0]}, Nap: {foglalas[1]}")
+        rendezett_foglalasok = sorted(self.szalloda.foglalasok_listazasa(), key=lambda x: x[1])
+        for foglalas in rendezett_foglalasok:
+            datum_str = foglalas[1].strftime('%Y. %m. %d')
+            self.foglalasok_listbox.insert(tk.END, f"Szoba: {foglalas[0]},      {datum_str}")
 
     def uj_foglalas(self):
-        szobaszam = simpledialog.askinteger("Új Foglalás", "Szoba száma:")
-        if szobaszam and szobaszam in self.szalloda.szobak:
-            nap = simpledialog.askstring("Új Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
+        szobaszam = simpledialog.askinteger("Foglalás", "Szoba száma:")
+        if szobaszam is None: return
+        if szobaszam in self.szalloda.szobak:
+            datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
+            if datum is None: return
             try:
-                date_obj = datetime.strptime(nap, '%Y.%m.%d').date()
+                date_obj = datetime.strptime(datum, '%Y. %m. %d').date()
                 if date_obj < date.today():
                     raise ValueError("A dátum nem lehet a mai napnál korábbi.")
                 ar = self.szalloda.foglalas(szobaszam, date_obj)
                 messagebox.showinfo("Siker", f"Foglalás rögzítve. Ár: {ar} Ft")
+                self.frissit_foglalasok_listajat()
             except ValueError as e:
                 messagebox.showerror("Hiba", str(e))
         else:
@@ -115,12 +137,19 @@ class SzallodaGUI:
         selected = self.foglalasok_listbox.curselection()
         if selected:
             foglalas = self.foglalasok_listbox.get(selected)
-            szobaszam, nap = map(lambda x: x.split(": ")[1], foglalas.split(", "))
-            date_obj = datetime.strptime(nap, '%Y.%m.%d').date()
-            if self.szalloda.lemondas(int(szobaszam), date_obj):
-                messagebox.showinfo("Siker", "Foglalás lemondva.")
-            else:
-                messagebox.showerror("Hiba", "Nem lehet lemondani a foglalást.")
+            try:
+                # Szétválasztjuk a "Szoba: " szöveg mentén, így a szobaszám lesz az első elem, a dátum a második
+                szobaszam_str, datum_str = foglalas.split(", ")
+                szobaszam = int(szobaszam_str.replace("Szoba: ", "").strip())
+                nap = datetime.strptime(datum_str.strip(), '%Y. %m. %d').date()
+                
+                if self.szalloda.lemondas(szobaszam, nap):
+                    messagebox.showinfo("Siker", "Foglalás lemondva.")
+                    self.frissit_foglalasok_listajat()
+                else:
+                    messagebox.showerror("Hiba", "Nem lehet lemondani a foglalást.")
+            except ValueError as e:
+                messagebox.showerror("Hiba", str(e))
         else:
             messagebox.showerror("Hiba", "Válassz ki egy foglalást a listából!")
 
