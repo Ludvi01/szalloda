@@ -119,7 +119,6 @@ class SzallodaGUI:
         master.grid_columnconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
         
-        # A foglalások listájának frissítése
         self.frissit_foglalasok_listajat()
 
     def frissit_foglalasok_listajat(self):
@@ -133,10 +132,10 @@ class SzallodaGUI:
         szobaszam_str = simpledialog.askstring("Foglalás", "Szoba száma:")
         
         if szobaszam_str is None or szobaszam_str.strip() == "":
-            return  # A felhasználó megszakította a műveletet vagy nem adott meg semmit
+            return
     
         if not szobaszam_str.isdigit():
-            messagebox.showerror("Hiba", "Nem számot adott meg. Kérjük, csak számértéket adjon meg a szobaszámhoz!")
+            messagebox.showerror("Hiba", "Nem számot adott meg!")
             return
         
         szobaszam = int(szobaszam_str)
@@ -145,17 +144,26 @@ class SzallodaGUI:
             datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
             
             if datum is None: return
+            
             try:
                 date_obj = datetime.strptime(datum, '%Y.%m.%d').date()
-                if date_obj < date.today():
-                    raise ValueError("A dátum nem lehet a mai napnál korábbi.")
+            except ValueError:
+                messagebox.showerror("Hiba", "A megadott dátum formátuma helytelen.\nKérjük, használja a következő formátumot: ÉÉÉÉ.HH.NN.")
+                return
+
+            if date_obj < date.today():
+                messagebox.showerror("Hiba", "A dátum nem lehet a mai napnál korábbi.")
+                return
+    
+            try:
                 ar = self.szalloda.foglalas(szobaszam, date_obj)
+                
                 messagebox.showinfo("Siker", f"Foglalás rögzítve. Ár: {ar} Ft")
                 self.frissit_foglalasok_listajat()
             except ValueError as e:
                 messagebox.showerror("Hiba", str(e))
         else:
-            messagebox.showerror("Hiba", "Érvénytelen szobaszám vagy nincs ilyen szoba.")
+            messagebox.showerror("Hiba", "Érvénytelen szobaszám.")
 
     def lemondas(self):
         selected = self.foglalasok_listbox.curselection()
