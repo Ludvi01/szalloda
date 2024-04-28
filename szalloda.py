@@ -144,7 +144,7 @@ class SzallodaGUI:
             datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
             
             if datum is None: return
-            
+
             try:
                 date_obj = datetime.strptime(datum, '%Y.%m.%d').date()
             except ValueError:
@@ -160,6 +160,7 @@ class SzallodaGUI:
                 
                 messagebox.showinfo("Siker", f"Foglalás rögzítve. Ár: {ar} Ft")
                 self.frissit_foglalasok_listajat()
+            
             except ValueError as e:
                 messagebox.showerror("Hiba", str(e))
         else:
