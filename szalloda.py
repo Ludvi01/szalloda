@@ -126,7 +126,9 @@ class SzallodaGUI:
         rendezett_foglalasok = sorted(self.szalloda.foglalasok_listazasa(), key=lambda x: x[1])
         for foglalas in rendezett_foglalasok:
             datum_str = foglalas[1].strftime('%Y. %m. %d')
-            self.foglalasok_listbox.insert(tk.END, f"Szoba: {foglalas[0]},      {datum_str}")
+            szoba = self.szalloda.szobak[foglalas[0]]
+            agyak_szama_str = "1" if szoba.agyak_szama == 1 else "2"
+            self.foglalasok_listbox.insert(tk.END, f"{datum_str}  -  {foglalas[0]}. szoba  -  {agyak_szama_str}db ágy")
 
     def uj_foglalas(self):
         szobaszam_str = simpledialog.askstring("Foglalás", "Szoba száma:")
@@ -169,13 +171,13 @@ class SzallodaGUI:
     def lemondas(self):
         selected = self.foglalasok_listbox.curselection()
         if selected:
-            foglalas = self.foglalasok_listbox.get(selected)
+            foglalas_str = self.foglalasok_listbox.get(selected[0])
             try:
-                # Szétválasztjuk a "Szoba: " szöveg mentén, így a szobaszám lesz az első elem, a dátum a második
-                szobaszam_str, datum_str = foglalas.split(", ")
-                szobaszam = int(szobaszam_str.replace("Szoba: ", "").strip())
+                # szétszedjük a dátumot, szobaszámot és az ágyak számát a stringből
+                datum_str, szobaszam_str, _ = foglalas_str.split(" - ")
+                szobaszam = int(szobaszam_str.split(".")[0])  # "101. szoba" -> "101"
                 nap = datetime.strptime(datum_str.strip(), '%Y. %m. %d').date()
-                
+
                 if self.szalloda.lemondas(szobaszam, nap):
                     messagebox.showinfo("Siker", "Foglalás lemondva.")
                     self.frissit_foglalasok_listajat()
