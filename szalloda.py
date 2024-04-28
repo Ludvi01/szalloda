@@ -7,6 +7,16 @@ class Szoba:
         self.szobaszam = szobaszam
         self.ar = ar
 
+class EgyagyasSzoba(Szoba):
+    def __init__(self, szobaszam):
+        super().__init__(szobaszam, 15000)
+        self.agyak_szama = 1
+
+class KetagyasSzoba(Szoba):
+    def __init__(self, szobaszam):
+        super().__init__(szobaszam, 20000)
+        self.agyak_szama = 2
+
 class Szalloda:
     def __init__(self, nev):
         self.nev = nev
@@ -18,15 +28,15 @@ class Szalloda:
         self.szobak[szoba.szobaszam] = szoba
 
     def alap_adatok_betoltese(self):
-        self.szobak[101] = Szoba(101, 15000)
-        self.szobak[102] = Szoba(102, 20000)
-        self.szobak[103] = Szoba(103, 18000)
+        self.szoba_hozzaadas(EgyagyasSzoba(101))
+        self.szoba_hozzaadas(KetagyasSzoba(102))
+        self.szoba_hozzaadas(KetagyasSzoba(103))
         mai_nap = date.today() + timedelta(days=30)
         for i in range(5):
             nap = mai_nap + timedelta(days=i * 4)
             self.foglalas(101 + i % 3, nap)
+
     def foglalas(self, szobaszam, nap):
-        # Ellenőrizzük, hogy létezik-e a szobaszám
         if szobaszam not in self.szobak:
             raise ValueError("A megadott szobaszám nem létezik.")
 
@@ -60,13 +70,14 @@ class SzallodaGUI:
         window_height = 250
         self.master.geometry(f'{window_width}x{window_height}')
 
-        # Ablak méretének fixálása, hogy ne lehessen átméretezni
+        # Ablak méretének fixálása
         self.master.resizable(False, False)
 
         # Ablak középre helyezése
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x_coordinate = int((screen_width / 2) - (window_width / 2))
+        x_offset = 300
+        x_coordinate = int((screen_width / 2) - (window_width / 2) - x_offset)
         y_coordinate = int((screen_height / 2) - (window_height / 2))
         self.master.geometry(f"+{x_coordinate}+{y_coordinate}")
 
@@ -119,9 +130,16 @@ class SzallodaGUI:
             self.foglalasok_listbox.insert(tk.END, f"Szoba: {foglalas[0]},      {datum_str}")
 
     def uj_foglalas(self):
-        szobaszam = simpledialog.askinteger("Foglalás", "Szoba száma:")
+        szobaszam_str = simpledialog.askstring("Foglalás", "Szoba száma:")
         
-        if szobaszam is None: return
+        if szobaszam_str is None or szobaszam_str.strip() == "":
+            return  # A felhasználó megszakította a műveletet vagy nem adott meg semmit
+    
+        if not szobaszam_str.isdigit():
+            messagebox.showerror("Hiba", "Nem számot adott meg. Kérjük, csak számértéket adjon meg a szobaszámhoz!")
+            return
+        
+        szobaszam = int(szobaszam_str)
 
         if szobaszam in self.szalloda.szobak:
             datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
