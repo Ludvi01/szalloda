@@ -76,8 +76,7 @@ class SzallodaGUI:
         # Ablak középre helyezése
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x_offset = 300
-        x_coordinate = int((screen_width / 2) - (window_width / 2) - x_offset)
+        x_coordinate = int((screen_width / 2) - (window_width / 2))
         y_coordinate = int((screen_height / 2) - (window_height / 2))
         self.master.geometry(f"+{x_coordinate}+{y_coordinate}")
 
@@ -131,42 +130,42 @@ class SzallodaGUI:
             self.foglalasok_listbox.insert(tk.END, f"{datum_str}  -  {foglalas[0]}. szoba  -  {agyak_szama_str}db ágy")
 
     def uj_foglalas(self):
-        szobaszam_str = simpledialog.askstring("Foglalás", "Szoba száma:")
+        szobaszam_str = simpledialog.askstring("Foglalás", "Szoba száma:", parent=root)
         
         if szobaszam_str is None or szobaszam_str.strip() == "":
             return
     
         if not szobaszam_str.isdigit():
-            messagebox.showerror("Hiba", "Nem számot adott meg!")
+            messagebox.showerror("Hiba", "Nem számot adott meg!", parent=root)
             return
         
         szobaszam = int(szobaszam_str)
 
         if szobaszam in self.szalloda.szobak:
-            datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):")
+            datum = simpledialog.askstring("Foglalás", "Dátum (ÉÉÉÉ.HH.NN):", parent=root)
             
             if datum is None: return
 
             try:
                 date_obj = datetime.strptime(datum, '%Y.%m.%d').date()
             except ValueError:
-                messagebox.showerror("Hiba", "A megadott dátum formátuma helytelen.\nKérjük, használja a következő formátumot: ÉÉÉÉ.HH.NN.")
+                messagebox.showerror("Hiba", "A megadott dátum formátuma helytelen.\nKérjük, használja a következő formátumot: ÉÉÉÉ.HH.NN.", parent=root)
                 return
 
             if date_obj < date.today():
-                messagebox.showerror("Hiba", "A dátum nem lehet a mai napnál korábbi.")
+                messagebox.showerror("Hiba", "A dátum nem lehet a mai napnál korábbi.", parent=root)
                 return
     
             try:
                 ar = self.szalloda.foglalas(szobaszam, date_obj)
                 
-                messagebox.showinfo("Siker", f"Foglalás rögzítve. Ár: {ar} Ft")
+                messagebox.showinfo("Siker", f"Foglalás rögzítve. Ár: {ar} Ft", parent=root)
                 self.frissit_foglalasok_listajat()
             
             except ValueError as e:
                 messagebox.showerror("Hiba", str(e))
         else:
-            messagebox.showerror("Hiba", "Érvénytelen szobaszám.")
+            messagebox.showerror("Hiba", "Érvénytelen szobaszám.", parent=root)
 
     def lemondas(self):
         selected = self.foglalasok_listbox.curselection()
@@ -179,14 +178,14 @@ class SzallodaGUI:
                 nap = datetime.strptime(datum_str.strip(), '%Y. %m. %d').date()
 
                 if self.szalloda.lemondas(szobaszam, nap):
-                    messagebox.showinfo("Siker", "Foglalás lemondva.")
+                    messagebox.showinfo("Siker", "Foglalás lemondva.", parent=root)
                     self.frissit_foglalasok_listajat()
                 else:
-                    messagebox.showerror("Hiba", "Nem lehet lemondani a foglalást.")
+                    messagebox.showerror("Hiba", "Nem lehet lemondani a foglalást.", parent=root)
             except ValueError as e:
-                messagebox.showerror("Hiba", str(e))
+                messagebox.showerror("Hiba", str(e), parent=root)
         else:
-            messagebox.showerror("Hiba", "Válassz ki egy foglalást a listából!")
+            messagebox.showerror("Hiba", "Válassz ki egy foglalást a listából!", parent=root)
 
 root = tk.Tk()
 szalloda = Szalloda("Grand Prima Hotel & Spa")
